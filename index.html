@@ -643,6 +643,7 @@ defaultReagents.forEach((r,i)=>document.getElementById('reagentBody').appendChil
 defaultCycles.forEach(c=>document.getElementById('cycleBody').appendChild(buildCycleRow(c)));
 buildPlate();
 recalcReagents();
+loadHistoryFromStorage();
 renderHistory();
 document.getElementById('meta-date').value = formatDateDDMMYYYY(new Date());
 
