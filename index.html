@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>qPCR Run Setup</title>
+<style>
+  :root{
+    --ink:#1b2430;
+    --paper:#f7f8fa;
+    --line:#d8dee6;
+    --accent:#2c6e8f;
+    --accent-dark:#1d4d64;
+    --well:#ffffff;
+    --well-filled:#eaf4f8;
+    --ntc:#f8e9e9;
+    --pos:#eaf6ec;
+    --mono: 'Consolas','SF Mono','Courier New',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding:24px;
+    font-size:14px;
+  }
+  h1{
+    font-size:20px;
+    letter-spacing:.03em;
+    text-transform:uppercase;
+    margin:0 0 2px 0;
+    color:var(--accent-dark);
+  }
+  .subtitle{color:#5b6675;font-size:12px;margin-bottom:18px;}
+  .toolbar{
+    display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;
+  }
+  button{
+    background:var(--accent);
+    color:#fff;border:none;border-radius:5px;
+    padding:8px 14px;font-size:13px;cursor:pointer;
+    font-weight:600;letter-spacing:.01em;
+  }
+  button.secondary{
+    background:#fff;color:var(--accent-dark);border:1px solid var(--accent);
+  }
+  button.danger{background:#a84444;}
+  button:hover{filter:brightness(1.08);}
+  input[type=file]{display:none;}
+
+  .panel{
+    background:#fff;border:1px solid var(--line);border-radius:8px;
+    padding:16px 18px;margin-bottom:18px;
+  }
+  .panel h2{
+    font-size:13px;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--accent-dark);margin:0 0 12px 0;border-bottom:1px solid var(--line);padding-bottom:6px;
+  }
+  .meta-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;
+  }
+  .field label{
+    display:block;font-size:11px;text-transform:uppercase;color:#5b6675;margin-bottom:3px;letter-spacing:.03em;
+  }
+  .field input{
+    width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:4px;font-size:13px;font-family:inherit;
+  }
+
+  table{border-collapse:collapse;width:100%;}
+  th,td{border:1px solid var(--line);padding:6px 8px;font-size:13px;text-align:center;}
+  th{background:#eef2f5;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:#44506080;color:#44506099;}
+  td input{
+    width:100%;border:none;background:transparent;text-align:center;font-family:var(--mono);font-size:13px;
+  }
+  td input:focus, .field input:focus{outline:2px solid var(--accent);border-radius:3px;}
+  td.name input{text-align:left;font-family:inherit;}
+  td.computed{background:#f5f9fb;font-family:var(--mono);font-weight:600;color:var(--accent-dark);}
+  .row-actions{display:flex;justify-content:flex-end;margin-top:8px;gap:8px;}
+  .row-actions button{padding:4px 10px;font-size:12px;}
+  .del{color:#a84444;background:none;border:none;cursor:pointer;font-size:15px;font-weight:bold;}
+
+  .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:start;}
+  @media (max-width:900px){.two-col{grid-template-columns:1fr;}}
+
+  .plate-wrap{overflow-x:auto;}
+  .plate{border-collapse:separate;border-spacing:6px;margin:0 auto;}
+  .plate th{border:none;background:none;color:#5b6675;font-size:12px;padding:2px;}
+  .plate td{border:none;padding:0;}
+  .well{
+    width:56px;height:56px;border-radius:50%;
+    border:1.5px solid #9aa7b5;background:var(--well);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .well input{
+    width:48px;height:48px;border-radius:50%;border:none;background:transparent;
+    text-align:center;font-size:10px;font-family:var(--mono);color:var(--ink);padding:0;
+  }
+  .well input:focus{outline:2px solid var(--accent);}
+  .well.filled{background:var(--well-filled);border-color:var(--accent);}
+  .well.ntc{background:var(--ntc);border-color:#a84444;}
+  .well.pos{background:var(--pos);border-color:#3c8c53;}
+  .well.dup{outline:2px dashed #d18a1a;outline-offset:1px;}
+  .legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:#5b6675;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:14px;height:14px;border-radius:50%;border:1.5px solid #9aa7b5;display:inline-block;}
+
+  .warning-line{font-size:12px;font-weight:600;margin-top:6px;display:none;}
+  .warning-line.show{display:block;}
+  .warning-line.warn-orange{color:#b3760f;}
+  .warning-line.warn-red{color:#a84444;}
+  .warning-line.warn-green{color:#3c8c53;}
+
+  .plate-tools{
+    display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;flex-wrap:wrap;
+  }
+  .plate-tools textarea{
+    flex:1;min-width:220px;min-height:36px;max-height:90px;padding:6px 8px;
+    border:1px solid var(--line);border-radius:4px;font-family:var(--mono);font-size:12px;resize:vertical;
+  }
+  .plate-tools .btn-col{display:flex;flex-direction:column;gap:6px;}
+  .plate-tools button{padding:6px 10px;font-size:12px;white-space:nowrap;}
+
+  .history-list{display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto;}
+  .history-item{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-size:12px;background:#fafcfd;
+  }
+  .history-item .hi-label{font-weight:600;color:var(--accent-dark);}
+  .history-item .hi-meta{color:#5b6675;font-size:11px;}
+  .history-item .hi-actions{display:flex;gap:6px;}
+  .history-item .hi-actions button{padding:3px 8px;font-size:11px;}
+  .history-empty{font-size:12px;color:#8a94a3;font-style:italic;}
+  #historyPanel{}
+
+  .summary-line{font-size:12px;color:#5b6675;margin-top:8px;}
+  .note{font-size:11px;color:#8a94a3;margin-top:10px;line-height:1.5;}
+  @media print{
+    #historyPanel,.plate-tools,.warning-line{display:none !important;}
+    @page{ size: landscape; margin: 8mm; }
+    body{padding:0;background:#fff;font-size:8px;}
+    .toolbar,.row-actions,.note,#loadInput,.del{display:none !important;}
+    h1,.subtitle{display:none !important;}
+    .panel{
+      border:1px solid #bbb;box-shadow:none;padding:3px 6px;margin-bottom:0;
+      break-inside:avoid;page-break-inside:avoid;
+    }
+    .panel h2{font-size:8px;margin:0 0 2px 0;padding-bottom:1px;}
+    .meta-grid{grid-template-columns:repeat(5,1fr);gap:4px;}
+    .field label{font-size:6px;margin-bottom:0;}
+    .field input{padding:0 2px;font-size:8px;border:none;border-bottom:1px solid #999;border-radius:0;height:12px;}
+
+    /* Natural (auto) row heights: meta row, reagents+cycling row, plate row */
+    .print-page{
+      display:grid;
+      grid-template-columns:1.3fr 1fr;
+      grid-template-areas:
+        "meta meta"
+        "reagents cycling"
+        "plate plate";
+      gap:3px;
+    }
+    .print-page > .panel:nth-of-type(1){grid-area:meta;}
+    #reagentPanel{grid-area:reagents;}
+    #cyclePanel{grid-area:cycling;}
+    #platePanel{grid-area:plate;}
+    .two-col{display:contents;}
+
+    table{font-size:8.5px;}
+    th,td{padding:0 3px;line-height:1.35;}
+    td input{padding:0;font-size:8.5px;height:9px;}
+    .summary-line{font-size:6.5px;margin-top:1px;}
+
+    .plate-wrap{display:flex;justify-content:center;}
+    .plate{border-collapse:separate;border-spacing:1.5mm 1.2mm;width:auto;margin:0 auto;}
+    .plate th{font-size:6.5px;padding:0;}
+    .well{width:9mm;height:9mm;border-width:0.75px;}
+    .well input{width:8mm;height:8mm;font-size:10px;}
+    .legend{font-size:6.5px;margin-top:2px;gap:6px;}
+    .swatch{width:6px;height:6px;}
+  }
+</style>
+</head>
+<body>
+
+<h1>qPCR Run Setup</h1>
+<div class="subtitle">Mastermix calculator &amp; 96-well plate designer</div>
+
+<div class="toolbar">
+  <button onclick="saveToFile()">Save run (.json)</button>
+  <button class="secondary" onclick="document.getElementById('loadInput').click()">Load run</button>
+  <input type="file" id="loadInput" accept="application/json" onchange="loadFromFile(event)">
+  <button class="secondary" onclick="exportPlateCSV()">Export plate (.csv)</button>
+  <button class="secondary" onclick="window.print()">Print / Save PDF</button>
+  <button class="danger" onclick="resetAll()">Reset all</button>
+</div>
+
+<div class="print-page">
+<!-- META -->
+<div class="panel">
+  <h2>Run info</h2>
+  <div class="meta-grid">
+    <div class="field"><label>Date</label><input id="meta-date" type="text" placeholder="DD/MM/YYYY" pattern="\d{2}/\d{2}/\d{4}" maxlength="10" oninput="autoFormatDate(this)"></div>
+    <div class="field"><label>Run name</label><input id="meta-runname" placeholder="e.g. Manip 1"></div>
+    <div class="field"><label>Protocol</label><input id="meta-protocol" placeholder="e.g. SYBR Green qPCR"></div>
+    <div class="field"><label>Number of samples</label><input id="meta-nsamples" type="number" min="1" value="12" oninput="recalcReagents()"></div>
+    <div class="field"><label>Pipetting error (extra reactions)</label><input id="meta-margin" type="number" min="0" step="1" value="1" oninput="recalcReagents()"></div>
+  </div>
+</div>
+
+<div class="two-col">
+  <!-- REAGENTS -->
+  <div class="panel" id="reagentPanel">
+    <h2>Mastermix reagents</h2>
+    <table id="reagentTable">
+      <thead>
+        <tr>
+          <th>#</th><th>Ingredient</th><th>Vol / rxn (µL)</th><th>Vol × N</th><th>Vol + pipetting error</th><th></th>
+        </tr>
+      </thead>
+      <tbody id="reagentBody"></tbody>
+    </table>
+    <div class="row-actions">
+      <button class="secondary" onclick="addReagentRow()">+ Add reagent</button>
+    </div>
+    <div class="summary-line" id="reagentSummary"></div>
+    <div class="warning-line" id="tubeWarning"></div>
+  </div>
+
+  <!-- CYCLING CONDITIONS -->
+  <div class="panel" id="cyclePanel">
+    <h2>Cycling conditions</h2>
+    <table id="cycleTable">
+      <thead>
+        <tr><th>Stage</th><th>°C</th><th>Time</th><th># cycles</th><th></th></tr>
+      </thead>
+      <tbody id="cycleBody"></tbody>
+    </table>
+    <div class="row-actions">
+      <button class="secondary" onclick="addCycleRow()">+ Add stage</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLATE -->
+<div class="panel" id="platePanel">
+  <h2>Plate design (96-well)</h2>
+  <div class="plate-tools">
+    <textarea id="pasteList" placeholder="Paste sample IDs here, one per line, then click Fill. Wells fill in order: A1→A12, B1→B12, ..."></textarea>
+    <div class="btn-col">
+      <button onclick="fillWellsFromList()">Fill wells from list</button>
+      <button class="secondary" onclick="clearPlate()">Clear plate</button>
+    </div>
+  </div>
+  <div class="plate-wrap">
+    <table class="plate" id="plateTable"></table>
+  </div>
+  <div class="legend">
+    <span><span class="swatch" style="background:#eaf4f8;border-color:var(--accent);"></span> Sample assigned</span>
+    <span><span class="swatch" style="background:#eaf6ec;border-color:#3c8c53;"></span> Type "POS" for positive control</span>
+    <span><span class="swatch" style="background:#f8e9e9;border-color:#a84444;"></span> Type "NTC" for no-template control</span>
+  </div>
+  <div class="warning-line" id="dupWarning"></div>
+  <div class="note">Click any well and type a sample ID. Wells auto-color once filled; typing POS or NTC colors them as controls. Use "Save run" to keep everything (info, reagents, cycling, plate) in one file you can reload later — this page does not store data between sessions on its own.</div>
+</div>
+</div><!-- /print-page -->
+
+<!-- RUN HISTORY -->
+<div class="panel" id="historyPanel">
+  <h2>Run history</h2>
+  <div class="row-actions" style="justify-content:flex-start;margin-top:0;margin-bottom:10px;">
+    <button onclick="addToHistory()">+ Save current run to history</button>
+  </div>
+  <div class="history-list" id="historyList"></div>
+</div>
+
+
+<script>
+const rows = 'ABCDEFGH'.split('');
+const cols = Array.from({length:12},(_,i)=>i+1);
+
+// ---------- Reagents ----------
+const defaultReagents = [
+  {name:'SYBR Green', vol:10},
+  {name:'Primer forward', vol:0.8},
+  {name:'Primer reverse', vol:0.8},
+  {name:'H2O', vol:6.4},
+];
+
+function buildReagentRow(r, idx){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>${idx+1}</td>
+    <td class="name"><input value="${r.name}" oninput="recalcReagents()"></td>
+    <td><input type="number" step="0.01" value="${r.vol}" oninput="recalcReagents()"></td>
+    <td class="computed volxn">-</td>
+    <td class="computed volmargin">-</td>
+    <td><button class="del" onclick="this.closest('tr').remove(); recalcReagents();" title="Remove">×</button></td>
+  `;
+  return tr;
+}
+
+function addReagentRow(name='New reagent', vol=0){
+  const body = document.getElementById('reagentBody');
+  body.appendChild(buildReagentRow({name,vol}, body.children.length));
+  recalcReagents();
+}
+
+function recalcReagents(){
+  const n = parseFloat(document.getElementById('meta-nsamples').value) || 0;
+  const extra = parseFloat(document.getElementById('meta-margin').value) || 0;
+  const nWithError = n + extra;
+  const body = document.getElementById('reagentBody');
+  let totalPerRxn = 0, totalWithMargin = 0;
+  [...body.children].forEach((tr,i)=>{
+    tr.children[0].textContent = i+1;
+    const vol = parseFloat(tr.children[2].querySelector('input').value) || 0;
+    const volxn = vol * n;
+    const volmargin = vol * nWithError;
+    tr.querySelector('.volxn').textContent = volxn.toFixed(2);
+    tr.querySelector('.volmargin').textContent = volmargin.toFixed(2);
+    totalPerRxn += vol;
+    totalWithMargin += volmargin;
+  });
+  document.getElementById('reagentSummary').textContent =
+    `Total per reaction: ${totalPerRxn.toFixed(2)} µL   |   Total mastermix for ${n} samples + ${extra} extra rxn (n=${nWithError}): ${totalWithMargin.toFixed(2)} µL`;
+
+  const warn = document.getElementById('tubeWarning');
+  warn.classList.remove('show','warn-green','warn-orange','warn-red');
+  if(totalWithMargin > 0){
+    warn.classList.add('show');
+    if(totalWithMargin <= 200){
+      warn.classList.add('warn-green');
+      warn.textContent = `Fits in a single 0.2 mL PCR tube (${totalWithMargin.toFixed(1)} µL).`;
+    } else if(totalWithMargin <= 1500){
+      warn.classList.add('warn-orange');
+      warn.textContent = `⚠ Exceeds 0.2 mL PCR tube capacity — use a 1.5 mL tube (${totalWithMargin.toFixed(1)} µL).`;
+    } else {
+      warn.classList.add('warn-red');
+      warn.textContent = `⚠ Exceeds 1.5 mL tube capacity — split into multiple tubes (${totalWithMargin.toFixed(1)} µL total).`;
+    }
+  }
+}
+
+// ---------- Cycling conditions ----------
+const defaultCycles = [
+  {stage:'Hold stage', temp:95, time:'2min', cycles:1},
+  {stage:'PCR stage 1', temp:95, time:'05s', cycles:40},
+  {stage:'PCR stage 2', temp:65, time:'30s', cycles:40},
+  {stage:'Melting stage', temp:95, time:'15s', cycles:1},
+  {stage:'Melting stage', temp:60, time:'1min', cycles:1},
+  {stage:'Melting stage', temp:95, time:'15s', cycles:1},
+];
+
+function buildCycleRow(c){
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="name"><input value="${c.stage}"></td>
+    <td><input type="number" value="${c.temp}"></td>
+    <td><input value="${c.time}"></td>
+    <td><input type="number" value="${c.cycles}"></td>
+    <td><button class="del" onclick="this.closest('tr').remove();" title="Remove">×</button></td>
+  `;
+  return tr;
+}
+
+function addCycleRow(){
+  document.getElementById('cycleBody').appendChild(
+    buildCycleRow({stage:'New stage', temp:95, time:'15s', cycles:1})
+  );
+}
+
+// ---------- Plate ----------
+function buildPlate(){
+  const table = document.getElementById('plateTable');
+  table.innerHTML = '';
+  const headRow = document.createElement('tr');
+  headRow.appendChild(document.createElement('th'));
+  cols.forEach(c=>{
+    const th = document.createElement('th'); th.textContent = c; headRow.appendChild(th);
+  });
+  table.appendChild(headRow);
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    const th = document.createElement('th'); th.textContent = r; tr.appendChild(th);
+    cols.forEach(c=>{
+      const td = document.createElement('td');
+      const wellId = `${r}${c}`;
+      td.innerHTML = `<div class="well" id="well-${wellId}"><input maxlength="8" data-well="${wellId}" oninput="updateWellStyle(this)"></div>`;
+      tr.appendChild(td);
+    });
+    table.appendChild(tr);
+  });
+}
+
+function updateWellStyle(input){
+  const wellDiv = input.closest('.well');
+  const val = input.value.trim().toUpperCase();
+  wellDiv.classList.remove('filled','ntc','pos');
+  if(val === 'NTC') wellDiv.classList.add('ntc');
+  else if(val === 'POS') wellDiv.classList.add('pos');
+  else if(val.length>0) wellDiv.classList.add('filled');
+  checkDuplicates();
+}
+
+function checkDuplicates(){
+  const counts = {};
+  document.querySelectorAll('.well input').forEach(inp=>{
+    const val = inp.value.trim().toUpperCase();
+    if(val === '' || val === 'NTC' || val === 'POS') return;
+    counts[val] = (counts[val] || []).concat(inp);
+  });
+  const dupIds = Object.keys(counts).filter(k => Array.isArray(counts[k]) ? counts[k].length > 1 : false);
+  // reset all dup styling first
+  document.querySelectorAll('.well.dup').forEach(w=>w.classList.remove('dup'));
+  const warn = document.getElementById('dupWarning');
+  if(dupIds.length === 0){
+    warn.classList.remove('show','warn-orange');
+    warn.textContent = '';
+    return;
+  }
+  dupIds.forEach(id=>{
+    counts[id].forEach(inp=> inp.closest('.well').classList.add('dup'));
+  });
+  warn.classList.add('show','warn-orange');
+  warn.textContent = `⚠ Duplicate sample ID${dupIds.length>1?'s':''}: ${dupIds.join(', ')} — check wells outlined in orange.`;
+}
+
+// ---------- Plate helper tools ----------
+function fillWellsFromList(){
+  const raw = document.getElementById('pasteList').value;
+  const ids = raw.split('\n').map(s=>s.trim()).filter(s=>s.length>0);
+  if(ids.length === 0) return;
+  const wellInputs = [];
+  rows.forEach(r=> cols.forEach(c=> wellInputs.push(document.querySelector(`.well input[data-well="${r}${c}"]`))));
+  ids.forEach((id,i)=>{
+    if(i < wellInputs.length){
+      wellInputs[i].value = id;
+      updateWellStyle(wellInputs[i]);
+    }
+  });
+  if(ids.length > wellInputs.length){
+    alert(`You pasted ${ids.length} IDs but the plate only has ${wellInputs.length} wells. The extra ${ids.length - wellInputs.length} were not placed.`);
+  }
+  document.getElementById('pasteList').value = '';
+}
+
+function clearPlate(){
+  if(!confirm('Clear all sample IDs from the plate?')) return;
+  document.querySelectorAll('.well input').forEach(inp=>{ inp.value=''; updateWellStyle(inp); });
+}
+
+// ---------- Run history ----------
+let history = [];
+
+function renderHistory(){
+  const list = document.getElementById('historyList');
+  list.innerHTML = '';
+  if(history.length === 0){
+    list.innerHTML = '<div class="history-empty">No saved runs yet. Use "Save current run to history" to keep a snapshot you can come back to.</div>';
+    return;
+  }
+  history.slice().reverse().forEach(entry=>{
+    const div = document.createElement('div');
+    div.className = 'history-item';
+    div.innerHTML = `
+      <div>
+        <div class="hi-label">${entry.label || 'Untitled run'}</div>
+        <div class="hi-meta">Saved ${entry.savedAt}</div>
+      </div>
+      <div class="hi-actions">
+        <button onclick="loadHistoryItem(${entry.id})">Load</button>
+        <button class="del" style="font-size:16px;" onclick="deleteHistoryItem(${entry.id})" title="Delete">×</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+}
+
+function addToHistory(){
+  const run = collectState();
+  const label = run.meta.runname ? run.meta.runname : (run.meta.date ? `Run ${run.meta.date}` : 'Untitled run');
+  history.push({
+    id: Date.now(),
+    label,
+    savedAt: new Date().toLocaleString(),
+    run
+  });
+  renderHistory();
+}
+
+function loadHistoryItem(id){
+  const entry = history.find(h=>h.id === id);
+  if(!entry) return;
+  applyState(entry.run);
+}
+
+function deleteHistoryItem(id){
+  if(!confirm('Delete this saved run from history?')) return;
+  history = history.filter(h=>h.id !== id);
+  renderHistory();
+}
+
+// ---------- Save / Load ----------
+function collectState(){
+  const reagents = [...document.querySelectorAll('#reagentBody tr')].map(tr=>({
+    name: tr.children[1].querySelector('input').value,
+    vol: tr.children[2].querySelector('input').value,
+  }));
+  const cycles = [...document.querySelectorAll('#cycleBody tr')].map(tr=>({
+    stage: tr.children[0].querySelector('input').value,
+    temp: tr.children[1].querySelector('input').value,
+    time: tr.children[2].querySelector('input').value,
+    cycles: tr.children[3].querySelector('input').value,
+  }));
+  const plate = {};
+  document.querySelectorAll('.well input').forEach(inp=>{
+    if(inp.value.trim() !== '') plate[inp.dataset.well] = inp.value;
+  });
+  return {
+    meta:{
+      date: document.getElementById('meta-date').value,
+      runname: document.getElementById('meta-runname').value,
+      protocol: document.getElementById('meta-protocol').value,
+      nsamples: document.getElementById('meta-nsamples').value,
+      margin: document.getElementById('meta-margin').value,
+    },
+    reagents, cycles, plate
+  };
+}
+
+function saveToFile(){
+  const currentRun = collectState();
+  const bundle = { currentRun, history };
+  const blob = new Blob([JSON.stringify(bundle,null,2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = (currentRun.meta.runname || 'qpcr_run').replace(/[^a-z0-9_\-]+/gi,'_');
+  a.href = url; a.download = `${fname}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadFromFile(evt){
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      if(parsed.currentRun){
+        // new bundle format
+        applyState(parsed.currentRun);
+        history = Array.isArray(parsed.history) ? parsed.history : [];
+      } else {
+        // legacy single-run file (meta/reagents/cycles/plate at top level)
+        applyState(parsed);
+      }
+      renderHistory();
+    }catch(err){
+      alert('Could not read this file: '+err.message);
+    }
+  };
+  reader.readAsText(file);
+  evt.target.value = '';
+}
+
+function applyState(state){
+  document.getElementById('meta-date').value = state.meta?.date || '';
+  document.getElementById('meta-runname').value = state.meta?.runname || '';
+  document.getElementById('meta-protocol').value = state.meta?.protocol || '';
+  document.getElementById('meta-nsamples').value = state.meta?.nsamples || 12;
+  document.getElementById('meta-margin').value = state.meta?.margin || 1;
+
+  const rBody = document.getElementById('reagentBody');
+  rBody.innerHTML = '';
+  (state.reagents || defaultReagents).forEach((r,i)=> rBody.appendChild(buildReagentRow(r,i)));
+
+  const cBody = document.getElementById('cycleBody');
+  cBody.innerHTML = '';
+  (state.cycles || defaultCycles).forEach(c=> cBody.appendChild(buildCycleRow(c)));
+
+  buildPlate();
+  if(state.plate){
+    Object.entries(state.plate).forEach(([wellId,val])=>{
+      const inp = document.querySelector(`.well input[data-well="${wellId}"]`);
+      if(inp){ inp.value = val; updateWellStyle(inp); }
+    });
+  }
+  recalcReagents();
+}
+
+function exportPlateCSV(){
+  let csv = ',' + cols.join(',') + '\n';
+  rows.forEach(r=>{
+    const rowVals = cols.map(c=>{
+      const inp = document.querySelector(`.well input[data-well="${r}${c}"]`);
+      const v = inp ? inp.value.trim() : '';
+      return v.includes(',') ? `"${v}"` : v;
+    });
+    csv += r + ',' + rowVals.join(',') + '\n';
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'plate_layout.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetAll(){
+  if(!confirm('Clear everything and start a fresh run?')) return;
+  document.getElementById('meta-date').value = '';
+  document.getElementById('meta-runname').value = '';
+  document.getElementById('meta-protocol').value = '';
+  document.getElementById('meta-nsamples').value = 12;
+  document.getElementById('meta-margin').value = 1;
+  const rBody = document.getElementById('reagentBody'); rBody.innerHTML='';
+  defaultReagents.forEach((r,i)=>rBody.appendChild(buildReagentRow(r,i)));
+  const cBody = document.getElementById('cycleBody'); cBody.innerHTML='';
+  defaultCycles.forEach(c=>cBody.appendChild(buildCycleRow(c)));
+  buildPlate();
+  recalcReagents();
+}
+
+// init
+defaultReagents.forEach((r,i)=>document.getElementById('reagentBody').appendChild(buildReagentRow(r,i)));
+defaultCycles.forEach(c=>document.getElementById('cycleBody').appendChild(buildCycleRow(c)));
+buildPlate();
+recalcReagents();
+renderHistory();
+document.getElementById('meta-date').value = formatDateDDMMYYYY(new Date());
+
+function formatDateDDMMYYYY(d){
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+function autoFormatDate(input){
+  let digits = input.value.replace(/\D/g,'').slice(0,8);
+  let out = digits;
+  if(digits.length > 4) out = `${digits.slice(0,2)}/${digits.slice(2,4)}/${digits.slice(4)}`;
+  else if(digits.length > 2) out = `${digits.slice(0,2)}/${digits.slice(2)}`;
+  input.value = out;
+}
+</script>
+</body>
+</html>
